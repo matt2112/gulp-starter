@@ -2,21 +2,28 @@
 
 // Required Modules
 const autoprefixer = require('gulp-autoprefixer');
+const browserify = require('browserify');
 const browserSync = require('browser-sync');
 const del = require('del');
 const gulp = require('gulp');
-const plumber = require('gulp-plumber');
+const pump = require('pump');
 const reload = browserSync.reload;
-const rename = require('gulp-rename');
 const sass = require('gulp-sass');
+const source = require('vinyl-source-stream');
 const uglify = require('gulp-uglify');
+const uglifycss = require('gulp-uglifycss');
+const vbuffer = require("vinyl-buffer");
 
 // Scripts Task
 gulp.task('scripts', () =>
-    gulp.src(['src/js/**/*.js', '!src/js/**/*.min.js'])
-        .pipe(plumber())
-        .pipe(rename({ suffix: '.min' }))
-        .pipe(uglify())
+    browserify({
+        entries: 'src/js/main.js',
+        debug: true
+    })
+        .transform("babelify", { presets: ["es2015"] })
+        .bundle()
+        .pipe(source('bundle.js'))
+        .pipe(vbuffer())
         .pipe(gulp.dest('src/js'))
         .pipe(reload({ stream: true }))
 );
@@ -24,8 +31,7 @@ gulp.task('scripts', () =>
 // Sass Task
 gulp.task('sass', () =>
     gulp.src('src/sass/**/*.scss')
-        .pipe(sass({ outputStyle: 'compressed' })
-            .on('error', sass.logError))
+        .pipe(sass().on('error', sass.logError))
         .pipe(autoprefixer('last 4 versions'))
         .pipe(gulp.dest('src/css'))
         .pipe(reload({ stream: true }))
@@ -48,9 +54,9 @@ gulp.task('browser-sync', () =>
 
 // Watch Tasks
 gulp.task('watch', () => {
-    gulp.watch('src/js/**/*.js', ['scripts']);
-    gulp.watch('src/sass/**/*.scss', ['sass']);
-    gulp.watch('src/**/*.html', ['html']);
+    gulp.watch('src/js/**', ['scripts']);
+    gulp.watch('src/sass/**', ['sass']);
+    gulp.watch('src/**/*.html', ['html']);;
 });
 
 // Build Task
@@ -60,13 +66,25 @@ gulp.task('build', () =>
         // create new build directory for all files
         gulp.src('src/**/*/')
             .pipe(gulp.dest('dist/'))
-            .on('end', () =>
+            .on('end', () => {
                 // remove unwanted build files   
                 del([
                     'dist/sass',
-                    'dist/js/!(*.min.js)'
+                    'dist/js/!(bundle.js)'
                 ])
-            )
+                // uglify js
+                pump([
+                    gulp.src('dist/js/bundle.js'),
+                    uglify(),
+                    gulp.dest('dist/js')
+                ]);
+                // uglify css
+                pump([
+                    gulp.src('dist/css/styles.css'),
+                    uglifycss(),
+                    gulp.dest('dist/css')
+                ]);
+            })
     )
 );
 
