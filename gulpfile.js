@@ -39,7 +39,7 @@ gulp.task('sass', () =>
 
 // HTML Task
 gulp.task('html', () =>
-    gulp.src('src/**/*.html')
+    gulp.src('src/**/index.html')
         .pipe(reload({ stream: true }))
 );
 
@@ -54,9 +54,9 @@ gulp.task('browser-sync', () =>
 
 // Watch Tasks
 gulp.task('watch', () => {
-    gulp.watch('src/js/**', ['scripts']);
+    gulp.watch('src/js/!(bundle.js)', ['scripts']);
     gulp.watch('src/sass/**', ['sass']);
-    gulp.watch('src/**/*.html', ['html']);;
+    gulp.watch('src/**/index.html', ['html']);;
 });
 
 // Build Task
