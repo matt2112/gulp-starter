@@ -48,7 +48,8 @@ gulp.task('browser-sync', () =>
     browserSync({
         server: {
             baseDir: './src/'
-        }
+        },
+        notify: false
     })
 );
 
